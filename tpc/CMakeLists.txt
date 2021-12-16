@@ -3,7 +3,7 @@
 # The extension is already found.  Any number of sources could be listed here.
 
 set(INCLUDE_DIRECTORIES
- ${BASE_INCLUDE_DIRECTORIES}
+  ${BASE_INCLUDE_DIRECTORIES}
   ${CMAKE_SOURCE_DIR}/mpdfield
   ${CMAKE_SOURCE_DIR}/mcstack
   ${CMAKE_SOURCE_DIR}/tpc
@@ -19,8 +19,9 @@ Set(SYSTEM_INCLUDE_DIRECTORIES
 include_directories(${INCLUDE_DIRECTORIES})
 
 set(LINK_DIRECTORIES
- ${ROOT_LIBRARY_DIR}
- ${FAIRROOT_LIBRARY_DIR}
+  ${ROOT_LIBRARY_DIR}
+  ${FAIRROOT_LIBRARY_DIR}
+  ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -54,6 +55,8 @@ MpdTpcClusterFinderAZ.cxx
 MpdTPCpid.cxx
 MpdTpcClusterFinderMlem.cxx
 MpdTpcEDepParams.cxx
+MpdTpcFastDigitizer.cxx
+fastdigimodel/TpcFastDigiModelWrapper.cxx
 )
 
 Set(HEADERS)
@@ -62,3 +65,11 @@ Set(LIBRARY_NAME tpc)
 Set(DEPENDENCIES Base Tof Gdml)
 
 GENERATE_LIBRARY()
+
+#add_custom_target(
+#        run ALL
+#        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/onnxruntime/build.sh
+#        COMMENT "Compiling onnxruntime"
+#)
+#
+#add_dependencies(tpc run)

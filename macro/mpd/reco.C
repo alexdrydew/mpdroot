@@ -44,7 +44,7 @@ using namespace std;
 R__ADD_INCLUDE_PATH($VMCWORKDIR)
 #include "macro/mpd/mpdloadlibs.C"
 
-#define UseMlem  // Choose: UseMlem HitProducer
+#define UseFastDigi  // Choose: UseMlem HitProducer FastDigi
 
 // Macro for running reconstruction:
 // inFile - input file with MC data, default: evetest.root
@@ -120,6 +120,11 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     tpcDigitizer->SetPersistence(kFALSE);
     fRun->AddTask(tpcDigitizer);
 #endif
+#ifdef UseFastDigi
+    MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer();
+    tpcDigitizer->SetPersistence(kFALSE);
+    fRun->AddTask(tpcDigitizer);
+#endif
 
     //  MpdTpcClusterFinderTask *tpcClusterFinder = new MpdTpcClusterFinderTask();
     //  tpcClusterFinder->SetDebug(kFALSE);
@@ -127,7 +132,7 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     //  tpcClusterFinder->SetCalcResiduals(kFALSE);
     //  fRun->AddTask(tpcClusterFinder);
 
-#ifdef UseMlem
+#ifndef HitProducer
     MpdTpcClusterFinderMlem *tpcClusAZ = new MpdTpcClusterFinderMlem();
     fRun->AddTask(tpcClusAZ);
 #endif
@@ -136,7 +141,7 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     fRun->AddTask(vertZ);
 
     MpdTpcKalmanFilter* recoKF = new MpdTpcKalmanFilter("Kalman filter");
-#ifdef UseMlem
+#ifndef HitProducer
     recoKF->UseTpcHit(kFALSE); // do not use hits from the hit producer
 #endif
     fRun->AddTask(recoKF);

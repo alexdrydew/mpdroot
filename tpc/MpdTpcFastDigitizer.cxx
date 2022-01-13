@@ -86,7 +86,8 @@ MpdTpcFastDigitizer::MpdTpcFastDigitizer()
         //fDistribute(kFALSE), // debug
           fPrintDebugInfo(kFALSE),
         //fOneRow(kTRUE), // debug
-          fOneRow(kFALSE) {
+          fOneRow(kFALSE),
+          modelWrapper(1) {
     fInputBranchName = "TpcPoint";
     fOutputBranchName = "MpdTpcDigit";
 
@@ -107,6 +108,8 @@ MpdTpcFastDigitizer::~MpdTpcFastDigitizer() {
 
 //---------------------------------------------------------------------------
 InitStatus MpdTpcFastDigitizer::Init() {
+
+    gSystem->Load("$VMCWORKDIR/tpc/fastdigimodel/libmodel_1.so");
 
     //Get ROOT Manager
     FairRootManager *ioman = FairRootManager::Instance();
@@ -209,9 +212,6 @@ InitStatus MpdTpcFastDigitizer::Init() {
     fPRF = padResponseFunction();
     nOverlapDigit = 0;
     nAllLightedDigits = 0;
-
-    gSystem->Load("$VMCWORKDIR/tpc/fastdigimodel/libmodel_1.so");
-    TpcFastDigiModelWrapper::model_init(1);
 
     cout << "-I- MpdTpcFastDigitizer: Initialization successful." << endl;
     return kSUCCESS;
@@ -955,8 +955,6 @@ void MpdTpcFastDigitizer::Finish() {
 
     cout << "Digitizer work time = " << ((Float_t) tAll) / CLOCKS_PER_SEC << endl;
 
-    TpcFastDigiModelWrapper::model_free();
-
     if (fMakeQA) {
         toDirectory("QA/TPC");
         Float_t digit = 0.0;
@@ -1066,7 +1064,7 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
                         static_cast<float>(tbin),
                         static_cast<float>(pad0)};
     vector<float> output(128);
-    TpcFastDigiModelWrapper::model_run(input.data(), output.data(), 4, 128);
+    modelWrapper.model_run(input.data(), output.data(), 4, 128);
     Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
             curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
 

@@ -40,5 +40,6 @@
 #pragma link C++ class MpdTpcEDepParams+;
 #pragma link C++ class MpdTpcFastDigitizer+;
 #pragma link C++ class TpcFastDigiModelWrapper+;
+#pragma link C++ class OnnxruntimeTpcFastDigiModelWrapper;
 
 #endif

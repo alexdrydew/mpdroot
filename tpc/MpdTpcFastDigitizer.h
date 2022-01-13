@@ -22,6 +22,7 @@
 #include "FairTask.h"
 #include "MpdMCTrack.h"
 #include "FairField.h"
+#include "fastdigimodel/TpcFastDigiModelWrapper.h"
 
 class TpcGas;
 class MpdTpcSectorGeo;
@@ -126,6 +127,8 @@ private:
     Bool_t fDistribute;              // distribute electrons between two MC points or not
     Bool_t fPrintDebugInfo;          // print or not additional information in output
     Bool_t fOneRow;                  // distribute charge only in one padrow - for debug
+
+    OnnxruntimeTpcFastDigiModelWrapper modelWrapper;
 
     ClassDef(MpdTpcFastDigitizer, 0)
 };

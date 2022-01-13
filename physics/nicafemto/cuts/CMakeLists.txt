@@ -31,6 +31,7 @@ Set(SYSTEM_INCLUDE_DIRECTORIES
 Set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR} 
   ${FAIRROOT_LIBRARY_DIR}
+  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
 )
 
 Include_Directories(${INCLUDE_DIRECTORIES})
@@ -87,7 +88,7 @@ cutmonitors/MpdDcaMonitor.cxx
 Set(HEADERS )
 Set(LINKDEF MpdNicaCutsLinkDef.h)
 Set(LIBRARY_NAME NicaMpdCuts)
-Set(DEPENDENCIES  NicaCut NicaMpdFormat NicaMpdHelper)
+Set(DEPENDENCIES NicaCut NicaMpdFormat NicaMpdHelper onnxruntime)
 
 GENERATE_LIBRARY()
 

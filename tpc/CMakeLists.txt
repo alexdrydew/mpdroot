@@ -10,10 +10,11 @@ set(INCLUDE_DIRECTORIES
   ${CMAKE_SOURCE_DIR}/tof
   ${CMAKE_SOURCE_DIR}/kalman
   ${CMAKE_SOURCE_DIR}/generators
+  ${CMAKE_SOURCE_DIR}/onnxruntime/include
 )
 
 Set(SYSTEM_INCLUDE_DIRECTORIES
- ${ROOT_INCLUDE_DIR} 
+  ${ROOT_INCLUDE_DIR}
 )
 
 include_directories(${INCLUDE_DIRECTORIES})
@@ -22,6 +23,7 @@ set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
   ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
+  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -62,7 +64,7 @@ fastdigimodel/TpcFastDigiModelWrapper.cxx
 Set(HEADERS)
 Set(LINKDEF tpcLinkDef.h)
 Set(LIBRARY_NAME tpc)
-Set(DEPENDENCIES Base Tof Gdml)
+Set(DEPENDENCIES Base Tof Gdml onnxruntime)
 
 GENERATE_LIBRARY()
 

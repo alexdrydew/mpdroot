@@ -2,6 +2,8 @@
 # the array .
 # The extension is already found.  Any number of sources could be listed here.
 
+find_package(CURL REQUIRED)
+
 set(INCLUDE_DIRECTORIES
   ${BASE_INCLUDE_DIRECTORIES}
   ${CMAKE_SOURCE_DIR}/mpdfield
@@ -11,6 +13,7 @@ set(INCLUDE_DIRECTORIES
   ${CMAKE_SOURCE_DIR}/kalman
   ${CMAKE_SOURCE_DIR}/generators
   ${CMAKE_SOURCE_DIR}/onnxruntime/include
+  ${CURL_INCLUDE_DIRS}
 )
 
 Set(SYSTEM_INCLUDE_DIRECTORIES
@@ -24,6 +27,7 @@ set(LINK_DIRECTORIES
   ${FAIRROOT_LIBRARY_DIR}
   ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
   ${CMAKE_SOURCE_DIR}/onnxruntime/lib
+  ${CURL_LIBRARIES}
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -64,7 +68,7 @@ fastdigimodel/TpcFastDigiModelWrapper.cxx
 Set(HEADERS)
 Set(LINKDEF tpcLinkDef.h)
 Set(LIBRARY_NAME tpc)
-Set(DEPENDENCIES Base Tof Gdml onnxruntime)
+Set(DEPENDENCIES Base Tof Gdml onnxruntime CURL::libcurl)
 
 GENERATE_LIBRARY()
 

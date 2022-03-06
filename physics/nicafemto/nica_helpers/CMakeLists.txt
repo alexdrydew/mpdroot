@@ -59,7 +59,7 @@ NicaTpcSectorGeo.cxx
 Set(HEADERS )
 Set(LINKDEF NicaMpdHelpersLinkDef.h)
 Set(LIBRARY_NAME NicaMpdHelper)
-Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna onnxruntime)
+Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna onnxruntime curl)
 
 GENERATE_LIBRARY()
 

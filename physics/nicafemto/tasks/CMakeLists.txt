@@ -60,7 +60,7 @@ NicaMpdV0Matcher.cxx
 Set(HEADERS )
 Set(LINKDEF NicaMpdTasksLinkDef.h)
 Set(LIBRARY_NAME NicaMpdTasks)
-Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna NicaMpdFormat onnxruntime)
+Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna NicaMpdFormat onnxruntime curl)
 
 GENERATE_LIBRARY()
 

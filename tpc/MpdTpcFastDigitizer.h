@@ -42,7 +42,7 @@ class MpdTpcFastDigitizer : public FairTask {
 public:
 
     // Constructors/Destructors ---------
-    MpdTpcFastDigitizer();
+    MpdTpcFastDigitizer(TString model_version = "baseline_onnx");
     virtual ~MpdTpcFastDigitizer();
 
     Bool_t isSubtrackInInwards(const TpcPoint *p1, const TpcPoint *p2);
@@ -128,7 +128,7 @@ private:
     Bool_t fPrintDebugInfo;          // print or not additional information in output
     Bool_t fOneRow;                  // distribute charge only in one padrow - for debug
 
-    OnnxruntimeTpcFastDigiModelWrapper modelWrapper;
+    ONNXRuntimeTpcFastDigiModelWrapper modelWrapper;
 
     ClassDef(MpdTpcFastDigitizer, 0)
 };

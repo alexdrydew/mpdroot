@@ -1,11 +1,11 @@
 #ifndef TPCFASTDIGIMODELWRAPPER_HH
 #define TPCFASTDIGIMODELWRAPPER_HH
 
-
+#include <TString.h>
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 
 
-class OnnxruntimeTpcFastDigiModelWrapper {
+class ONNXRuntimeTpcFastDigiModelWrapper {
 private:
     Ort::Session* session;
     Ort::MemoryInfo memoryInfo;
@@ -19,8 +19,8 @@ private:
     void printInfo();
 
 public:
-    OnnxruntimeTpcFastDigiModelWrapper(int num_threads);
-    ~OnnxruntimeTpcFastDigiModelWrapper();
+    ONNXRuntimeTpcFastDigiModelWrapper(int num_threads, TString modelVersion);
+    ~ONNXRuntimeTpcFastDigiModelWrapper();
 
     int get_batch_size() { return 1; }
     int model_run(float *input, float *output, int input_size, int output_size);

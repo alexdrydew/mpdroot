@@ -38,13 +38,14 @@
 #include "MpdEmcHitCreation.h"
 
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 #endif
 
 R__ADD_INCLUDE_PATH($VMCWORKDIR)
 #include "macro/mpd/mpdloadlibs.C"
 
-#define UseFastDigi  // Choose: UseMlem HitProducer FastDigi
+#define UseFastDigi  // Choose: UseMlem HitProducer UseFastDigi
 
 // Macro for running reconstruction:
 // inFile - input file with MC data, default: evetest.root
@@ -57,6 +58,12 @@ R__ADD_INCLUDE_PATH($VMCWORKDIR)
 //      "proof:user@proof.server:21001" - to run on the PROOF cluster created with PoD (under user 'MPD', default port - 21001)
 //      "proof:user@proof.server:21001:workers=10" - to run on the PROOF cluster created with PoD with 10 workers (under USER, default port - 21001)
 //	nc-farm : proof:mpd@nc10.jinr.ru:21001
+
+
+#ifdef UseFastDigi
+
+#endif
+
 void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile = "mpddst.root", Int_t nStartEvent = 0, Int_t nEvents = 10, TString run_type = "local") {
     // ========================================================================
     // Verbosity level (0=quiet, 1=event level, 2=track level, 3=debug)
@@ -121,6 +128,11 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     fRun->AddTask(tpcDigitizer);
 #endif
 #ifdef UseFastDigi
+    setenv("MLFLOW_URL", ..., true);
+    setenv("MINIO_URL", ..., true);
+    setenv("ONNX_MODEL_NAME", ..., true);
+
+
     MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer();
     tpcDigitizer->SetPersistence(kFALSE);
     fRun->AddTask(tpcDigitizer);

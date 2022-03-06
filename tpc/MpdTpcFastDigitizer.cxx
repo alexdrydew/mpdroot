@@ -60,7 +60,7 @@ static clock_t tAll = 0;
 //FILE *lunAZ = nullptr; //fopen("gasGain.dat","w");
 //---------------------------------------------------------------------------
 
-MpdTpcFastDigitizer::MpdTpcFastDigitizer()
+MpdTpcFastDigitizer::MpdTpcFastDigitizer(TString model_version)
         : FairTask("TPC fast digitizer"),
           fMCPointArray(nullptr),
           fMCTracksArray(nullptr),
@@ -87,7 +87,7 @@ MpdTpcFastDigitizer::MpdTpcFastDigitizer()
           fPrintDebugInfo(kFALSE),
         //fOneRow(kTRUE), // debug
           fOneRow(kFALSE),
-          modelWrapper(1) {
+          modelWrapper(1, model_version) {
     fInputBranchName = "TpcPoint";
     fOutputBranchName = "MpdTpcDigit";
 

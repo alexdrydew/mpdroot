@@ -10,7 +10,7 @@ set(INCLUDE_DIRECTORIES
   ${CMAKE_SOURCE_DIR}/tof
   ${CMAKE_SOURCE_DIR}/kalman
   ${CMAKE_SOURCE_DIR}/generators
-  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/include
+  ${CMAKE_SOURCE_DIR}/external/onnxruntime/include
 )
 
 Set(SYSTEM_INCLUDE_DIRECTORIES
@@ -22,7 +22,7 @@ include_directories(${INCLUDE_DIRECTORIES})
 set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
-  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/lib
+  ${CMAKE_SOURCE_DIR}/external/onnxruntime/lib
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -57,7 +57,7 @@ MpdTPCpid.cxx
 MpdTpcClusterFinderMlem.cxx
 MpdTpcEDepParams.cxx
 MpdTpcFastDigitizer.cxx
-fastdigimodel/TpcFastDigiModelWrapper.cxx
+        fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.cxx
 )
 
 Set(HEADERS)

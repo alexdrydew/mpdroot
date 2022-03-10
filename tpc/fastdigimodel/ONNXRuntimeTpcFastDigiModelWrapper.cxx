@@ -1,5 +1,5 @@
 // This Class' Header --------------------------
-#include "TpcFastDigiModelWrapper.h"
+#include "ONNXRuntimeTpcFastDigiModelWrapper.h"
 
 // ROOT Headers --------------------------------
 #include "TRandom.h"

@@ -22,7 +22,7 @@
 #include "FairTask.h"
 #include "MpdMCTrack.h"
 #include "FairField.h"
-#include "fastdigimodel/TpcFastDigiModelWrapper.h"
+#include "fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.h"
 
 class TpcGas;
 class MpdTpcSectorGeo;

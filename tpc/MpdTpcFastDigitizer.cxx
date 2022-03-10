@@ -20,7 +20,7 @@
 #include "MpdTpcSectorGeo.h"
 #include "TpcGas.h"
 #include "TpcPoint.h"
-#include "fastdigimodel/TpcFastDigiModelWrapper.h"
+#include "fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.h"
 
 // FAIR Headers ----------------------
 #include "FairRunAna.h"

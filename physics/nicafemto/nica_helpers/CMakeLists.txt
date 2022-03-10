@@ -38,7 +38,7 @@ Set(SYSTEM_INCLUDE_DIRECTORIES
 Set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
-  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
+  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/lib
 )
 
 Include_Directories(${INCLUDE_DIRECTORIES})
@@ -59,7 +59,7 @@ NicaTpcSectorGeo.cxx
 Set(HEADERS )
 Set(LINKDEF NicaMpdHelpersLinkDef.h)
 Set(LIBRARY_NAME NicaMpdHelper)
-Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna onnxruntime curl)
+Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna onnxruntime)
 
 GENERATE_LIBRARY()
 

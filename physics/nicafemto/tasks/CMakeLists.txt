@@ -44,7 +44,7 @@ Set(SYSTEM_INCLUDE_DIRECTORIES
 Set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
-  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
+  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/lib
 )
 
 Include_Directories(${INCLUDE_DIRECTORIES})
@@ -60,7 +60,7 @@ NicaMpdV0Matcher.cxx
 Set(HEADERS )
 Set(LINKDEF NicaMpdTasksLinkDef.h)
 Set(LIBRARY_NAME NicaMpdTasks)
-Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna NicaMpdFormat onnxruntime curl)
+Set(DEPENDENCIES NicaFeatures NicaDataFormat MpdDst tpc Base NicaCut NicaAna NicaMpdFormat onnxruntime)
 
 GENERATE_LIBRARY()
 

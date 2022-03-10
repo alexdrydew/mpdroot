@@ -2,7 +2,7 @@
 #define TPCFASTDIGIMODELWRAPPER_HH
 
 #include <TString.h>
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <onnxruntime_cxx_api.h>
 
 
 class ONNXRuntimeTpcFastDigiModelWrapper {

@@ -2,8 +2,6 @@
 # the array .
 # The extension is already found.  Any number of sources could be listed here.
 
-find_package(CURL REQUIRED)
-
 set(INCLUDE_DIRECTORIES
   ${BASE_INCLUDE_DIRECTORIES}
   ${CMAKE_SOURCE_DIR}/mpdfield
@@ -12,8 +10,7 @@ set(INCLUDE_DIRECTORIES
   ${CMAKE_SOURCE_DIR}/tof
   ${CMAKE_SOURCE_DIR}/kalman
   ${CMAKE_SOURCE_DIR}/generators
-  ${CMAKE_SOURCE_DIR}/onnxruntime/include
-  ${CURL_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/include
 )
 
 Set(SYSTEM_INCLUDE_DIRECTORIES
@@ -25,9 +22,7 @@ include_directories(${INCLUDE_DIRECTORIES})
 set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
-  ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
-  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
-  ${CURL_LIBRARIES}
+  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/lib
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -68,14 +63,6 @@ fastdigimodel/TpcFastDigiModelWrapper.cxx
 Set(HEADERS)
 Set(LINKDEF tpcLinkDef.h)
 Set(LIBRARY_NAME tpc)
-Set(DEPENDENCIES Base Tof Gdml onnxruntime CURL::libcurl)
+Set(DEPENDENCIES Base Tof Gdml onnxruntime)
 
 GENERATE_LIBRARY()
-
-#add_custom_target(
-#        run ALL
-#        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/onnxruntime/build.sh
-#        COMMENT "Compiling onnxruntime"
-#)
-#
-#add_dependencies(tpc run)

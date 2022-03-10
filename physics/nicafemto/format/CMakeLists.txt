@@ -43,7 +43,7 @@ Set(SYSTEM_INCLUDE_DIRECTORIES
 Set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
-  ${CMAKE_SOURCE_DIR}/onnxruntime/lib
+  ${CMAKE_SOURCE_DIR}/onnxruntime_bin/lib
 )
 message(WARNING,"LINK DIRS ${LINK_DIRECTORIES}")
 
@@ -94,7 +94,7 @@ MpdQACoreManager.cxx
 Set(HEADERS )
 Set(LINKDEF NicaMpdInterfaceLinkDef.h)
 Set(LIBRARY_NAME NicaMpdFormat)
-Set(DEPENDENCIES NicaFeatures NicaGen NicaDataFormat MpdDst MpdBase tpc MpdMCStack NicaMpdHelper UniGenFormat NicaQA onnxruntime curl)
+Set(DEPENDENCIES NicaFeatures NicaGen NicaDataFormat MpdDst MpdBase tpc MpdMCStack NicaMpdHelper UniGenFormat NicaQA onnxruntime)
 
 GENERATE_LIBRARY()
 

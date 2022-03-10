@@ -109,8 +109,6 @@ MpdTpcFastDigitizer::~MpdTpcFastDigitizer() {
 //---------------------------------------------------------------------------
 InitStatus MpdTpcFastDigitizer::Init() {
 
-    gSystem->Load("$VMCWORKDIR/tpc/fastdigimodel/libmodel_1.so");
-
     //Get ROOT Manager
     FairRootManager *ioman = FairRootManager::Instance();
     if (FairRunSim::Instance() == nullptr)

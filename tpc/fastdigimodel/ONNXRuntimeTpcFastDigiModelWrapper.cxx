@@ -59,27 +59,37 @@ std::vector<char> downloadModel() {
    std::string minioUrl = std::string(std::getenv("MINIO_URL"));
    std::string modelName = std::string(std::getenv("ONNX_MODEL_NAME"));
 
-   LOG(INFO) << "Getting last model version...";
+   int modelVersion;
+   auto modelVersionPtr = std::getenv("ONNX_MODEL_VERSION");
+
    pt::ptree root;
    std::stringstream ss;
-   auto getVersionPath = "/api/2.0/mlflow/registered-models/get-latest-versions?name=" + modelName;
-   auto getVersionResponse = doGetRequest(mlflowUrl, "5000", getVersionPath);
-   if (getVersionResponse.result() != http::status::ok) {
-      throw std::runtime_error("Model wasn't found!");
+
+   if (modelVersionPtr != nullptr) {
+      modelVersion = atoi(modelVersionPtr);
    }
-   ss << getVersionResponse.body();
-   pt::read_json(ss, root);
-   int lastVersion = -1;
-   for (pt::ptree::value_type &versionDict : root.get_child("model_versions")) {
-      int version = versionDict.second.get<int>("version");
-      if (lastVersion < version) {
-         lastVersion = version;
+   else {
+      LOG(INFO) << "Getting last model version...";
+      auto getVersionPath = "/api/2.0/mlflow/registered-models/get-latest-versions?name=" + modelName;
+      auto getVersionResponse = doGetRequest(mlflowUrl, "5000", getVersionPath);
+      if (getVersionResponse.result() != http::status::ok) {
+         throw std::runtime_error("Model wasn't found!");
+      }
+      ss << getVersionResponse.body();
+      pt::read_json(ss, root);
+      modelVersion = -1;
+      for (pt::ptree::value_type &versionDict : root.get_child("model_versions")) {
+         int version = versionDict.second.get<int>("version");
+         if (modelVersion < version) {
+            modelVersion = version;
+         }
       }
    }
-   std::cout << "\t" << modelName << " version: " << lastVersion << std::endl;
+
+   std::cout << "\t" << modelName << " version: " << modelVersion << std::endl;
 
    LOG(INFO) << "Getting model download url..." << std::endl;
-   auto getDownloadUriPath = "/api/2.0/preview/mlflow/model-versions/get-download-uri?name=" + modelName + "&version=" + std::to_string(lastVersion);
+   auto getDownloadUriPath = "/api/2.0/preview/mlflow/model-versions/get-download-uri?name=" + modelName + "&version=" + std::to_string(modelVersion);
    auto response = doGetRequest(mlflowUrl, "5000", getDownloadUriPath);
    if (response.result() != http::status::ok) {
       throw std::runtime_error("Failed to retrieve model download url!");
@@ -109,7 +119,6 @@ ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int num_t
     sessionOptions.SetIntraOpNumThreads(num_threads);
     sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
-    // session = new Ort::Session(env, modelFilepath.c_str(), sessionOptions);
     session = new Ort::Session(env, static_cast<void*>(onnx.data()), onnx.size(), sessionOptions);
 
     Ort::AllocatorWithDefaultOptions allocator;

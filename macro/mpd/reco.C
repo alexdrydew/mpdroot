@@ -128,9 +128,9 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     fRun->AddTask(tpcDigitizer);
 #endif
 #ifdef UseFastDigi
-    setenv("MLFLOW_URL", "84.201.176.34", true);
-    setenv("MINIO_URL", "84.201.176.34", true);
-    setenv("ONNX_MODEL_NAME", "baseline_onnx", true);
+    setenv("MLFLOW_URL", "51.250.106.167", false);
+    setenv("MINIO_URL", "51.250.106.167", false);
+    setenv("ONNX_MODEL_NAME", "baseline_onnx", false);
 
 
     MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer();

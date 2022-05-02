@@ -54,10 +54,22 @@ auto doGetRequest(const std::string& host, const std::string& port, const std::s
    return response;
 }
 
+
+std::string getenvSafe(const char* envName) {
+   auto ptr = std::getenv(envName);
+   if (ptr == nullptr) {
+      throw std::runtime_error(std::string(envName) + " environment variable is not specified");
+   }
+   return std::string(ptr);
+}
+
+
 std::vector<char> downloadModel() {
-   std::string mlflowUrl = std::string(std::getenv("MLFLOW_URL"));
-   std::string minioUrl = std::string(std::getenv("MINIO_URL"));
-   std::string modelName = std::string(std::getenv("ONNX_MODEL_NAME"));
+   std::string mlflowHost = getenvSafe("MLFLOW_HOST");
+   std::string mlflowPort = getenvSafe("MLFLOW_PORT");
+   std::string s3Host = getenvSafe("S3_HOST");
+   std::string s3Port = getenvSafe("S3_PORT");
+   std::string modelName = getenvSafe("ONNX_MODEL_NAME");
 
    int modelVersion;
    auto modelVersionPtr = std::getenv("ONNX_MODEL_VERSION");
@@ -71,7 +83,7 @@ std::vector<char> downloadModel() {
    else {
       LOG(INFO) << "Getting last model version...";
       auto getVersionPath = "/api/2.0/mlflow/registered-models/get-latest-versions?name=" + modelName;
-      auto getVersionResponse = doGetRequest(mlflowUrl, "5000", getVersionPath);
+      auto getVersionResponse = doGetRequest(mlflowHost, mlflowPort, getVersionPath);
       if (getVersionResponse.result() != http::status::ok) {
          throw std::runtime_error("Model wasn't found!");
       }
@@ -86,11 +98,10 @@ std::vector<char> downloadModel() {
       }
    }
 
-   std::cout << "\t" << modelName << " version: " << modelVersion << std::endl;
-
+   LOG(INFO) << "\t" << modelName << " version: " << modelVersion << std::endl;
    LOG(INFO) << "Getting model download url..." << std::endl;
    auto getDownloadUriPath = "/api/2.0/preview/mlflow/model-versions/get-download-uri?name=" + modelName + "&version=" + std::to_string(modelVersion);
-   auto response = doGetRequest(mlflowUrl, "5000", getDownloadUriPath);
+   auto response = doGetRequest(mlflowHost, mlflowPort, getDownloadUriPath);
    if (response.result() != http::status::ok) {
       throw std::runtime_error("Failed to retrieve model download url!");
    }
@@ -99,7 +110,7 @@ std::vector<char> downloadModel() {
    auto artifactUri = root.get<std::string>("artifact_uri");
    auto modelDownloadPath = artifactUri.substr(4) + "/model.onnx"; // s3://<path-to-model> -> /<path-to-model>
    LOG(INFO) << "Downloading ONNX model..." << std::endl;
-   auto onnxModelResponse = doGetRequest(minioUrl, "9000", modelDownloadPath);
+   auto onnxModelResponse = doGetRequest(s3Host, s3Port, modelDownloadPath);
    if (onnxModelResponse.result() != http::status::ok) {
       throw std::runtime_error("Failed to download ONNX model!");
    }

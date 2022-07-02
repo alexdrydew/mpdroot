@@ -59,11 +59,6 @@ R__ADD_INCLUDE_PATH($VMCWORKDIR)
 //      "proof:user@proof.server:21001:workers=10" - to run on the PROOF cluster created with PoD with 10 workers (under USER, default port - 21001)
 //	nc-farm : proof:mpd@nc10.jinr.ru:21001
 
-
-#ifdef UseFastDigi
-
-#endif
-
 void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile = "mpddst.root", Int_t nStartEvent = 0, Int_t nEvents = 10, TString run_type = "local") {
     // ========================================================================
     // Verbosity level (0=quiet, 1=event level, 2=track level, 3=debug)
@@ -128,7 +123,24 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     fRun->AddTask(tpcDigitizer);
 #endif
 #ifdef UseFastDigi
-    MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer();
+    char* onnxFilename = std::getenv("ONNX_FILEPATH");
+   ONNXRuntimeTpcFastDigiModelWrapper* onnxWrapper;
+    if (onnxFilename != nullptr) {
+       onnxWrapper = new ONNXRuntimeTpcFastDigiModelWrapper(1, onnxFilename);
+    } else {
+       char* mlflowHost = std::getenv("MLFLOW_HOST");
+       int mlflowPort = std::atoi(std::getenv("MLFLOW_PORT"));
+       char* s3Host = std::getenv("S3_HOST");
+       int s3Port = std::atoi(std::getenv("S3_PORT"));
+       char* onnxModelName = std::getenv("ONNX_MODEL_NAME");
+       int onnxModelVersion = -1;
+       char* onnxModelVersionStr = std::getenv("ONNX_MODEL_VERSION");
+       if (onnxModelVersionStr != nullptr) {
+          onnxModelVersion = std::atoi(onnxModelVersionStr);
+       }
+       onnxWrapper = new ONNXRuntimeTpcFastDigiModelWrapper(1, mlflowHost, mlflowPort, s3Host, s3Port, onnxModelName, onnxModelVersion);
+    }
+    MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer(onnxWrapper);
     tpcDigitizer->SetPersistence(kFALSE);
     fRun->AddTask(tpcDigitizer);
 #endif

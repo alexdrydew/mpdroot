@@ -9,11 +9,11 @@
 // C/C++ Headers -------------------------------
 #include <cmath>
 #include <iostream>
-#include <string>
 #include <numeric>
 #include <vector>
 #include <cstdlib>
 #include <exception>
+#include <iterator>
 
 // Boost Headers -------------------------------
 #include <boost/property_tree/ptree.hpp>
@@ -23,73 +23,52 @@
 #include <boost/beast/version.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <string>
 
 // ONNXRuntime Headers -------------------------
 #include <onnxruntime_cxx_api.h>
 
-
-namespace pt = boost::property_tree;
+namespace pt    = boost::property_tree;
 namespace beast = boost::beast;
-namespace http = beast::http;
-using tcp = boost::asio::ip::tcp;
-
+namespace http  = beast::http;
+using tcp       = boost::asio::ip::tcp;
 
 template <typename T>
-T vectorProduct(const std::vector<T>& v) {
-    return accumulate(v.begin(), v.end(), 1, std::multiplies<T>());
+T vectorProduct(const std::vector<T> &v)
+{
+   return accumulate(v.begin(), v.end(), 1, std::multiplies<T>());
 }
 
-auto doGetRequest(const std::string& host, const std::string& port, const std::string& path) {
+auto doGetRequest(const TString &host, int port, const TString &path)
+{
    boost::asio::io_context ioc;
-   tcp::resolver resolver(ioc);
-   tcp::socket socket(ioc);
-   boost::asio::connect(socket, resolver.resolve(host, port));
-   http::request<http::string_body> request(http::verb::get, path, 11);
-   request.set(http::field::host, host);
+   tcp::resolver           resolver(ioc);
+   tcp::socket             socket(ioc);
+
+   boost::asio::connect(socket, resolver.resolve(host.Data(), std::to_string(port)));
+   http::request<http::string_body> request(http::verb::get, path.Data(), 11);
+   request.set(http::field::host, host.Data());
    http::write(socket, request);
-   boost::beast::flat_buffer buffer;
+   boost::beast::flat_buffer         buffer;
    http::response<http::string_body> response;
    http::read(socket, buffer, response);
    return response;
 }
 
-
-std::string getenvSafe(const char* envName) {
-   auto ptr = std::getenv(envName);
-   if (ptr == nullptr) {
-      throw std::runtime_error(std::string(envName) + " environment variable is not specified");
-   }
-   return std::string(ptr);
-}
-
-
-std::vector<char> downloadModel() {
-   std::string mlflowHost = getenvSafe("MLFLOW_HOST");
-   std::string mlflowPort = getenvSafe("MLFLOW_PORT");
-   std::string s3Host = getenvSafe("S3_HOST");
-   std::string s3Port = getenvSafe("S3_PORT");
-   std::string modelName = getenvSafe("ONNX_MODEL_NAME");
-
-   int modelVersion;
-   auto modelVersionPtr = std::getenv("ONNX_MODEL_VERSION");
-
-   pt::ptree root;
+std::vector<char> downloadModel(const TString &mlflowHost, int mlflowPort, const TString &s3Host, int s3Port,
+                                const TString &modelName, int modelVersion = -1)
+{
+   pt::ptree         root;
    std::stringstream ss;
 
-   if (modelVersionPtr != nullptr) {
-      modelVersion = atoi(modelVersionPtr);
-   }
-   else {
+   if (modelVersion == -1) {
       LOG(INFO) << "Getting last model version...";
-      auto getVersionPath = "/api/2.0/mlflow/registered-models/get-latest-versions?name=" + modelName;
+      auto getVersionPath     = "/api/2.0/mlflow/registered-models/get-latest-versions?name=" + modelName;
       auto getVersionResponse = doGetRequest(mlflowHost, mlflowPort, getVersionPath);
       if (getVersionResponse.result() != http::status::ok) {
          throw std::runtime_error("Model wasn't found!");
       }
       ss << getVersionResponse.body();
       pt::read_json(ss, root);
-      modelVersion = -1;
       for (pt::ptree::value_type &versionDict : root.get_child("model_versions")) {
          int version = versionDict.second.get<int>("version");
          if (modelVersion < version) {
@@ -100,14 +79,15 @@ std::vector<char> downloadModel() {
 
    LOG(INFO) << "\t" << modelName << " version: " << modelVersion << std::endl;
    LOG(INFO) << "Getting model download url..." << std::endl;
-   auto getDownloadUriPath = "/api/2.0/preview/mlflow/model-versions/get-download-uri?name=" + modelName + "&version=" + std::to_string(modelVersion);
+   auto getDownloadUriPath = "/api/2.0/preview/mlflow/model-versions/get-download-uri?name=" + modelName +
+                             "&version=" + std::to_string(modelVersion);
    auto response = doGetRequest(mlflowHost, mlflowPort, getDownloadUriPath);
    if (response.result() != http::status::ok) {
       throw std::runtime_error("Failed to retrieve model download url!");
    }
    ss << response.body();
    pt::read_json(ss, root);
-   auto artifactUri = root.get<std::string>("artifact_uri");
+   auto artifactUri       = root.get<std::string>("artifact_uri");
    auto modelDownloadPath = artifactUri.substr(4) + "/model.onnx"; // s3://<path-to-model> -> /<path-to-model>
    LOG(INFO) << "Downloading ONNX model..." << std::endl;
    auto onnxModelResponse = doGetRequest(s3Host, s3Port, modelDownloadPath);
@@ -118,62 +98,86 @@ std::vector<char> downloadModel() {
    return std::vector<char>(onnxModel.begin(), onnxModel.end());
 }
 
-ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int num_threads, TString modelVersion) :
-    memoryInfo(Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator,
-                                          OrtMemType::OrtMemTypeDefault)) {
-
-    LOG(INFO) << "Downloading TPC fast digitizer model" << std::endl;
-    auto onnx = downloadModel();
-
-    Ort::Env env = Ort::Env(ORT_LOGGING_LEVEL_WARNING, "tpc digitizer");
-    Ort::SessionOptions sessionOptions;
-    sessionOptions.SetIntraOpNumThreads(num_threads);
-    sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
-
-    session = new Ort::Session(env, static_cast<void*>(onnx.data()), onnx.size(), sessionOptions);
-
-    Ort::AllocatorWithDefaultOptions allocator;
-
-    const char* inputName = session->GetInputName(0, allocator);
-    Ort::TypeInfo inputTypeInfo = session->GetInputTypeInfo(0);
-    auto inputTensorInfo = inputTypeInfo.GetTensorTypeAndShapeInfo();
-    inputDims = inputTensorInfo.GetShape();
-    size_t inputTensorSize = vectorProduct(inputDims);
-    std::vector<float> inputTensorValues = std::vector<float>(inputTensorSize, 0.);
-
-    const char* outputName = session->GetOutputName(0, allocator);
-    Ort::TypeInfo outputTypeInfo = session->GetOutputTypeInfo(0);
-    auto outputTensorInfo = outputTypeInfo.GetTensorTypeAndShapeInfo();
-    outputDims = outputTensorInfo.GetShape();
-    size_t outputTensorSize = vectorProduct(outputDims);
-    std::vector<float> outputTensorValues = std::vector<float>(outputTensorSize);
-
-    inputNames = {inputName};
-    outputNames = {outputName};
-
-    printInfo();
+ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &mlflowHost,
+                                                                       int mlflowPort, const TString &s3Host,
+                                                                       int s3Port, const TString &modelName,
+                                                                       int modelVersion)
+   : numThreads(numThreads), mlflowHost(mlflowHost), mlflowPort(mlflowPort), s3Host(s3Host), s3Port(s3Port),
+     modelName(modelName), modelVersion(modelVersion),
+     memoryInfo(Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault))
+{
 }
 
-ONNXRuntimeTpcFastDigiModelWrapper::~ONNXRuntimeTpcFastDigiModelWrapper() {
-    delete session;
+ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &onnxFilePath)
+   : numThreads(numThreads), onnxFilePath(onnxFilePath),
+     memoryInfo(Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault))
+{
 }
 
-void ONNXRuntimeTpcFastDigiModelWrapper::printInfo() {
-    LOG(INFO) << "Initialized GAN neural network TPC fast digitizer. Implemented by HSE MPD TPC project group." << std::endl;
+ONNXRuntimeTpcFastDigiModelWrapper::~ONNXRuntimeTpcFastDigiModelWrapper()
+{
+   if (session != nullptr) {
+      delete session;
+   }
 }
 
-int ONNXRuntimeTpcFastDigiModelWrapper::model_run(float *input, float *output, int input_size, int output_size) {
-    std::vector<Ort::Value> inputTensors;
-    std::vector<Ort::Value> outputTensors;
+void ONNXRuntimeTpcFastDigiModelWrapper::init()
+{
+   std::vector<char> onnx;
+   if (onnxFilePath.Length() > 0) {
+      LOG(INFO) << "Loading TPC fast digitizer model from local file." << std::endl;
+      std::ifstream file = std::ifstream(onnxFilePath, std::ios::binary | std::ios::in);
+      onnx               = std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+   } else {
+      LOG(INFO) << "Loading TPC fast digitizer model using model server." << std::endl;
+      onnx = downloadModel(mlflowHost, mlflowPort, s3Host, s3Port, modelName, modelVersion);
+   }
 
-    inputTensors.push_back(Ort::Value::CreateTensor<float>(
-            memoryInfo, input, input_size, inputDims.data(),
-            inputDims.size()));
-    outputTensors.push_back(Ort::Value::CreateTensor<float>(
-            memoryInfo, output, output_size,
-            outputDims.data(), outputDims.size()));
+   Ort::Env            env = Ort::Env(ORT_LOGGING_LEVEL_WARNING, "tpc digitizer");
+   Ort::SessionOptions sessionOptions;
+   sessionOptions.SetIntraOpNumThreads(numThreads);
+   sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
-    session->Run(Ort::RunOptions{nullptr},
-                inputNames.data(), inputTensors.data(), 1,
-                outputNames.data(), outputTensors.data(), 1);
+   session = new Ort::Session(env, static_cast<void *>(onnx.data()), onnx.size(), sessionOptions);
+
+   Ort::AllocatorWithDefaultOptions allocator;
+
+   const char *  inputName              = session->GetInputName(0, allocator);
+   Ort::TypeInfo inputTypeInfo          = session->GetInputTypeInfo(0);
+   auto          inputTensorInfo        = inputTypeInfo.GetTensorTypeAndShapeInfo();
+   inputDims                            = inputTensorInfo.GetShape();
+   size_t             inputTensorSize   = vectorProduct(inputDims);
+   std::vector<float> inputTensorValues = std::vector<float>(inputTensorSize, 0.);
+
+   const char *  outputName              = session->GetOutputName(0, allocator);
+   Ort::TypeInfo outputTypeInfo          = session->GetOutputTypeInfo(0);
+   auto          outputTensorInfo        = outputTypeInfo.GetTensorTypeAndShapeInfo();
+   outputDims                            = outputTensorInfo.GetShape();
+   size_t             outputTensorSize   = vectorProduct(outputDims);
+   std::vector<float> outputTensorValues = std::vector<float>(outputTensorSize);
+
+   inputNames  = {inputName};
+   outputNames = {outputName};
+
+   printInfo();
+}
+
+void ONNXRuntimeTpcFastDigiModelWrapper::printInfo()
+{
+   LOG(INFO) << "Initialized GAN neural network TPC fast digitizer. Implemented by HSE MPD TPC project group."
+             << std::endl;
+}
+
+int ONNXRuntimeTpcFastDigiModelWrapper::modelRun(float *input, float *output, int input_size, int output_size)
+{
+   std::vector<Ort::Value> inputTensors;
+   std::vector<Ort::Value> outputTensors;
+
+   inputTensors.push_back(
+      Ort::Value::CreateTensor<float>(memoryInfo, input, input_size, inputDims.data(), inputDims.size()));
+   outputTensors.push_back(
+      Ort::Value::CreateTensor<float>(memoryInfo, output, output_size, outputDims.data(), outputDims.size()));
+
+   session->Run(Ort::RunOptions{nullptr}, inputNames.data(), inputTensors.data(), 1, outputNames.data(),
+                outputTensors.data(), 1);
 }

@@ -60,7 +60,7 @@ static clock_t tAll = 0;
 //FILE *lunAZ = nullptr; //fopen("gasGain.dat","w");
 //---------------------------------------------------------------------------
 
-MpdTpcFastDigitizer::MpdTpcFastDigitizer(TString model_version)
+MpdTpcFastDigitizer::MpdTpcFastDigitizer(ONNXRuntimeTpcFastDigiModelWrapper* onnxModelWrapper)
         : FairTask("TPC fast digitizer"),
           fMCPointArray(nullptr),
           fMCTracksArray(nullptr),
@@ -87,7 +87,7 @@ MpdTpcFastDigitizer::MpdTpcFastDigitizer(TString model_version)
           fPrintDebugInfo(kFALSE),
         //fOneRow(kTRUE), // debug
           fOneRow(kFALSE),
-          modelWrapper(1, model_version) {
+          modelWrapper(onnxModelWrapper) {
     fInputBranchName = "TpcPoint";
     fOutputBranchName = "MpdTpcDigit";
 
@@ -108,6 +108,8 @@ MpdTpcFastDigitizer::~MpdTpcFastDigitizer() {
 
 //---------------------------------------------------------------------------
 InitStatus MpdTpcFastDigitizer::Init() {
+
+    modelWrapper->init();
 
     //Get ROOT Manager
     FairRootManager *ioman = FairRootManager::Instance();
@@ -1062,7 +1064,7 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
                         static_cast<float>(tbin),
                         static_cast<float>(pad0)};
     vector<float> output(128);
-    modelWrapper.model_run(input.data(), output.data(), 4, 128);
+    modelWrapper->modelRun(input.data(), output.data(), 4, 128);
     Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
             curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
 

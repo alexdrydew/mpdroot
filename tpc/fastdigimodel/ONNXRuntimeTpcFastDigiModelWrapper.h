@@ -4,26 +4,39 @@
 #include <TString.h>
 #include <onnxruntime_cxx_api.h>
 
-
 class ONNXRuntimeTpcFastDigiModelWrapper {
 private:
-    Ort::Session* session;
-    Ort::MemoryInfo memoryInfo;
+   Ort::Session *  session;
+   Ort::MemoryInfo memoryInfo;
 
-    std::vector<const char*> inputNames;
-    std::vector<const char*> outputNames;
+   std::vector<const char *> inputNames;
+   std::vector<const char *> outputNames;
 
-    std::vector<int64_t> inputDims;
-    std::vector<int64_t> outputDims;
+   std::vector<int64_t> inputDims;
+   std::vector<int64_t> outputDims;
 
-    void printInfo();
+   int     numThreads;
+   TString mlflowHost;
+   int     mlflowPort;
+   TString s3Host;
+   int     s3Port;
+   TString modelName;
+   int     modelVersion;
+
+   TString onnxFilePath;
+
+   void printInfo();
 
 public:
-    ONNXRuntimeTpcFastDigiModelWrapper(int num_threads, TString modelVersion);
-    ~ONNXRuntimeTpcFastDigiModelWrapper();
+   ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &mlflowHost, int mlflowPort, const TString &s3Host,
+                                      int s3Port, const TString &modelName, int modelVersion = -1);
+   ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &onnxFilePath);
+   ~ONNXRuntimeTpcFastDigiModelWrapper();
 
-    int get_batch_size() { return 1; }
-    int model_run(float *input, float *output, int input_size, int output_size);
+   void init();
+
+   int getBatchSize() { return 1; }
+   int modelRun(float *input, float *output, int input_size, int output_size);
 };
 
 #endif

@@ -159,16 +159,13 @@ void ONNXRuntimeTpcFastDigiModelWrapper::init()
    inputNames  = {inputName};
    outputNames = {outputName};
 
-   printInfo();
+   LOG(INFO) << "Initialized GAN neural network TPC fast digitizer. Implemented by HSE MPD TPC project group.";
+   LOG(INFO) << "Model loaded.";
+   LOG(INFO) << "Input: " << inputName << ", Size: " << inputTensorSize;
+   LOG(INFO) << "Output: " << outputName << ", Size: " << outputTensorSize << std::endl;
 }
 
-void ONNXRuntimeTpcFastDigiModelWrapper::printInfo()
-{
-   LOG(INFO) << "Initialized GAN neural network TPC fast digitizer. Implemented by HSE MPD TPC project group."
-             << std::endl;
-}
-
-int ONNXRuntimeTpcFastDigiModelWrapper::modelRun(float *input, float *output, int input_size, int output_size)
+int ONNXRuntimeTpcFastDigiModelWrapper::modelRun(float *input, float *output, size_t input_size, size_t output_size)
 {
    std::vector<Ort::Value> inputTensors;
    std::vector<Ort::Value> outputTensors;

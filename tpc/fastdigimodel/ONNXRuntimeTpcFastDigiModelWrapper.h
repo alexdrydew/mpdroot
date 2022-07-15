@@ -25,8 +25,6 @@ private:
 
    TString onnxFilePath;
 
-   void printInfo();
-
 public:
    ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &mlflowHost, int mlflowPort, const TString &s3Host,
                                       int s3Port, const TString &modelName, int modelVersion = -1);
@@ -36,7 +34,7 @@ public:
    void init();
 
    int getBatchSize() { return 1; }
-   int modelRun(float *input, float *output, int input_size, int output_size);
+   int modelRun(float *input, float *output, size_t input_size, size_t output_size);
 };
 
 #endif

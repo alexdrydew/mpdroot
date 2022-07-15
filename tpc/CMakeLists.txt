@@ -57,7 +57,8 @@ MpdTPCpid.cxx
 MpdTpcClusterFinderMlem.cxx
 MpdTpcEDepParams.cxx
 MpdTpcFastDigitizer.cxx
-        fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.cxx
+MpdTpcFastDigitizer6.cxx
+fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.cxx
 )
 
 Set(HEADERS)

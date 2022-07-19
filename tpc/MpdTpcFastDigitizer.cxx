@@ -1032,9 +1032,9 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
     // Interface to fast digitizer
 
     MpdTpcSectorGeo *secGeo = MpdTpcSectorGeo::Instance();
-    TVector3 mom3, pin, pout, xyzLoc;
+    TVector3 pin, pout, xyzLoc;
     TpcPoint *curPoint = (TpcPoint *) fMCPointArray->UncheckedAt(curHit->GetRefIndex());
-    curPoint->Momentum(mom3);
+    curPoint->Momentum(modelInputParameters.mom3);
     curHit->Position(pin);
     /*
     curPoint->Position(pin);
@@ -1049,52 +1049,74 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
     Double_t secAng = secGeo->SectorAngle(isec % secGeo->NofSectors());
     TVector3 sec3(TMath::Cos(secAng), TMath::Sin(secAng), 0.0);
     TVector3 vecxy(pin.X(), pin.Y(), 0.0);
-    if (vecxy * mom3 < 0) mom3 *= -1; // particle goes inward - change direction
-    Double_t dip = (TMath::PiOver2() - mom3.Theta()) * TMath::RadToDeg();
-    mom3.SetZ(0.0);
-    //Double_t cross = (mom3.Phi() - sec3.Phi()) * TMath::RadToDeg();
-    Double_t cross = TMath::Sign(mom3.Angle(sec3), sec3.Cross(mom3).Z()) * TMath::RadToDeg();
-    Double_t tbin = secGeo->Z2TimeBin(zHit0) - 0.4935;
+    if (vecxy * modelInputParameters.mom3 < 0) modelInputParameters.mom3 *= -1; // particle goes inward - change direction
+    modelInputParameters.dip = (TMath::PiOver2() - modelInputParameters.mom3.Theta()) * TMath::RadToDeg();
+    modelInputParameters.mom3.SetZ(0.0);
+    //Double_t cross = (modelInputParameters.mom3.Phi() - sec3.Phi()) * TMath::RadToDeg();
+    modelInputParameters.cross = TMath::Sign(modelInputParameters.mom3.Angle(sec3), sec3.Cross(modelInputParameters.mom3).Z()) * TMath::RadToDeg();
+    modelInputParameters.tbin = secGeo->Z2TimeBin(zHit0) - 0.4935;
     Double_t yHit0 = xyzLoc.X();
-    Int_t row0 = secGeo->PadRow(padID);
-    Double_t pad0 = (yHit0 - 0.5) / secGeo->PadWidth(0) + secGeo->NPadsInRows()[row0] + 0.5;
+    modelInputParameters.row0 = secGeo->PadRow(padID);
+    modelInputParameters.pad0 = (yHit0 - 0.5) / secGeo->PadWidth(0) + secGeo->NPadsInRows()[modelInputParameters.row0] + 0.5;
 
-    vector<float> input{static_cast<float>(cross),
-                        static_cast<float>(dip),
-                        static_cast<float>(tbin),
-                        static_cast<float>(pad0)};
-    vector<float> output(128);
-    modelWrapper->modelRun(input.data(), output.data(), 4, 128);
-    Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
-            curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
+    vector<float> input = prepareModelInput();
+    vector<float> output = prepareModelOutput();
+    modelWrapper->modelRun(input.data(), output.data(), input.size(), output.size());
+    saveModelRunResultToDigitsArray(
+       secGeo, curPoint, modelInputParameters.tbin, yHit0, modelInputParameters.row0,
+       modelInputParameters.pad0, output);
+}
 
-    for (Int_t ii = 0; ii < 128; ++ii) sum += output[ii];
-    coef /= sum;
-    if (Int_t(yHit0 / secGeo->PadWidth(0) + secGeo->NPadsInRows()[row0]) < 0) return; //AZ - 301120
 
-    for (int ii_pad = 0; ii_pad < 8; ii_pad++)
-        for (int ii_time = 0; ii_time < 16; ii_time++) {
-            Int_t i_pad = static_cast<Int_t>(pad0) + ii_pad - 3;
-            Int_t i_time = static_cast<Int_t>(tbin) + ii_time - 7;
-            if (i_pad >= 0
-                && i_pad < secGeo->NPadsInRows()[row0] * 2
-                && i_time >= 0
-                && i_time < fSecGeo->GetNTimeBins()) {
-                Float_t signal = output[ii_pad * 16 + ii_time] * coef;
-                if (signal < 0.1) continue;
-                //fDigits4dArray[row0][i_pad][i_time].signal += output[ii_pad * 16 + ii_time];
-                fDigits4dArray[row0][i_pad][i_time].signal += signal;
-                auto origin = curPoint->GetTrackID();
-                auto it = fDigits4dArray[row0][i_pad][i_time].origins.find(origin);
-                if (it != fDigits4dArray[row0][i_pad][i_time].origins.end()) {
-                    //it->second += output[ii_pad * 16 + ii_time];
-                    it->second += signal;
-                } else {
-                    //fDigits4dArray[row0][i_pad][i_time].origins.insert(pair<Int_t, Floa	t_t>(origin, output[ii_pad * 16 + ii_time]));
-                    fDigits4dArray[row0][i_pad][i_time].origins.insert(pair<Int_t, Float_t>(origin, signal));
-                }
-            }
-        }
+vector<float> MpdTpcFastDigitizer::prepareModelOutput() const
+{
+   return vector<float>(128);
+}
+
+
+vector<float> MpdTpcFastDigitizer::prepareModelInput() const
+{
+   return {static_cast<float>(modelInputParameters.cross),
+           static_cast<float>(modelInputParameters.dip),
+           static_cast<float>(modelInputParameters.tbin),
+           static_cast<float>(modelInputParameters.pad0)};
+}
+
+
+void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo, const TpcPoint *curPoint,
+                                                          Double_t tbin, Double_t yHit0, Int_t row0, Double_t pad0,
+                                                          const vector<float> &output)
+{
+   Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
+           curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
+
+   for (Int_t ii = 0; ii < 128; ++ii) sum += output[ii];
+   coef /= sum;
+   if (Int_t(yHit0 / secGeo->PadWidth(0) + secGeo->NPadsInRows()[row0]) < 0) return; // AZ - 301120
+
+   for (int ii_pad = 0; ii_pad < 8; ii_pad++)
+       for (int ii_time = 0; ii_time < 16; ii_time++) {
+           Int_t i_pad = static_cast<Int_t>(pad0) + ii_pad - 3;
+           Int_t i_time = static_cast<Int_t>(tbin) + ii_time - 7;
+           if (i_pad >= 0
+               && i_pad < secGeo->NPadsInRows()[row0] * 2
+               && i_time >= 0
+               && i_time < fSecGeo->GetNTimeBins()) {
+               Float_t signal = output[ii_pad * 16 + ii_time] * coef;
+               if (signal < 0.1) continue;
+               //fDigits4dArray[row0][i_pad][i_time].signal += output[ii_pad * 16 + ii_time];
+               fDigits4dArray[row0][i_pad][i_time].signal += signal;
+               auto origin = curPoint->GetTrackID();
+               auto it = fDigits4dArray[row0][i_pad][i_time].origins.find(origin);
+               if (it != fDigits4dArray[row0][i_pad][i_time].origins.end()) {
+                   //it->second += output[ii_pad * 16 + ii_time];
+                   it->second += signal;
+               } else {
+                   //fDigits4dArray[row0][i_pad][i_time].origins.insert(pair<Int_t, Floa	t_t>(origin, output[ii_pad * 16 + ii_time]));
+                   fDigits4dArray[row0][i_pad][i_time].origins.insert(pair<Int_t, Float_t>(origin, signal));
+               }
+           }
+       }
 }
 
 //---------------------------------------------------------------------------

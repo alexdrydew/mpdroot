@@ -39,6 +39,7 @@
 #pragma link C++ class MpdTpcClusterFinderMlem+;
 #pragma link C++ class MpdTpcEDepParams+;
 #pragma link C++ class MpdTpcFastDigitizer+;
+#pragma link C++ class MpdTpcFastDigitizer6+;
 #pragma link C++ class TpcFastDigiModelWrapper+;
 #pragma link C++ class ONNXRuntimeTpcFastDigiModelWrapper;
 

@@ -76,6 +76,24 @@ private:
     Double_t Polya(); // gas gain fluctuations
     void SignalShaping(); // electronics response
     void FastDigi(int isec, const MpdTpcHit* curHit); // interface to fast digitizer
+    void saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo,
+                                             const TpcPoint *curPoint, Double_t tbin,
+                                             Double_t yHit0, Int_t row0, Double_t pad0,
+                                             const vector<float> &output);
+    virtual vector<float> prepareModelInput() const;
+    virtual vector<float> prepareModelOutput() const;
+
+ protected:
+    struct ModelInputParameters {
+       Double_t cross;
+       Double_t dip;
+       Double_t tbin;
+       Double_t pad0;
+       TVector3 mom3;
+       Int_t row0;
+    };
+
+    ModelInputParameters modelInputParameters;
 
 private:
 

@@ -894,8 +894,11 @@ void MpdTpcHitProducer::ExecNew()
             Double_t cosAngle = TMath::Cos (mom3.Angle(sec3));
             //cout << isec0 << " " << lay << " " << phi << " " << hitp->GetStep() << " " << cosAngle << endl;
             Double_t step = padh / TMath::Abs(cosAngle);
-            hitp->SetStep (TMath::Min(step,3.5));
-            hitp->SetEnergyLoss (hitp->GetEnergyLoss() * hitp->GetStep());
+            step = TMath::Min (step, 3.5); //AZ-060822
+            //AZ-060822 hitp->SetStep(TMath::Min(step, 3.5));
+            //AZ-060822 hitp->SetEnergyLoss(hitp->GetEnergyLoss() * hitp->GetStep());
+            hitp->SetEnergyLoss (hitp->GetEnergyLoss() / hitp->GetStep() * step); //AZ-060822
+            hitp->SetStep(step); //AZ-060822
           }
         }
         for (Int_t j = 0; j < 4; ++j) xyzloct[j].clear();

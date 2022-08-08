@@ -77,9 +77,9 @@ private:
     void SignalShaping(); // electronics response
     void FastDigi(int isec, const MpdTpcHit* curHit); // interface to fast digitizer
     void saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo,
-                                             const TpcPoint *curPoint, Double_t tbin,
-                                             Double_t yHit0, Int_t row0, Double_t pad0,
-                                             const vector<float> &output);
+                                         Double_t eLoss, int origin, Double_t tbin,
+                                         Double_t yHit0, Int_t row0, Double_t pad0,
+                                         const vector<float> &output);
     virtual vector<float> prepareModelInput() const;
     virtual vector<float> prepareModelOutput() const;
 

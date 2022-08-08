@@ -1063,8 +1063,10 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
     vector<float> input = prepareModelInput();
     vector<float> output = prepareModelOutput();
     modelWrapper->modelRun(input.data(), output.data(), input.size(), output.size());
+    Double_t eLoss = curHit->GetEnergyLoss();
+    int origin = curPoint->GetTrackID();
     saveModelRunResultToDigitsArray(
-       secGeo, curPoint, modelInputParameters.tbin, yHit0, modelInputParameters.row0,
+       secGeo, eLoss, origin, modelInputParameters.tbin, yHit0, modelInputParameters.row0,
        modelInputParameters.pad0, output);
 }
 
@@ -1084,12 +1086,12 @@ vector<float> MpdTpcFastDigitizer::prepareModelInput() const
 }
 
 
-void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo, const TpcPoint *curPoint,
+void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo, Double_t eLoss, int origin,
                                                           Double_t tbin, Double_t yHit0, Int_t row0, Double_t pad0,
                                                           const vector<float> &output)
 {
    Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
-           curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
+           eLoss * scale; // dedx-to-ADC conversion
 
    for (Int_t ii = 0; ii < 128; ++ii) sum += output[ii];
    coef /= sum;
@@ -1107,7 +1109,6 @@ void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGe
                if (signal < 0.1) continue;
                //fDigits4dArray[row0][i_pad][i_time].signal += output[ii_pad * 16 + ii_time];
                fDigits4dArray[row0][i_pad][i_time].signal += signal;
-               auto origin = curPoint->GetTrackID();
                auto it = fDigits4dArray[row0][i_pad][i_time].origins.find(origin);
                if (it != fDigits4dArray[row0][i_pad][i_time].origins.end()) {
                    //it->second += output[ii_pad * 16 + ii_time];

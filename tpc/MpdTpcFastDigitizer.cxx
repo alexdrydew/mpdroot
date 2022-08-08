@@ -244,6 +244,7 @@ void MpdTpcFastDigitizer::Exec(Option_t *opt) {
     for (Int_t ih = 0; ih < nHits; ++ih) {
         MpdTpcHit *hit = (MpdTpcHit *) fHitArray->UncheckedAt(ih);
         Int_t isec = fSecGeo->Sector(hit->GetDetectorID());
+        if (hit->GetZ() < 0) isec += fSecGeo->NofSectors(); //AZ-040822
         hitsM[isec].insert(pair<Float_t, Int_t>(hit->GetLayer(), ih));
     }
 
@@ -275,17 +276,17 @@ void MpdTpcFastDigitizer::Exec(Option_t *opt) {
                             // IR03 new scale and rounding
                             //Double_t ScaleFactor = 20./(550.*1.25); // 687.5
                             // В старой шкале пик от mip для 15mm пэда был 687 канале,
-                            // тогда среднее (As=1.3MP) от рел-роста 1.01 в канале 550.*1.2\
-5*1.3,                                                                          
+                            // тогда среднее (As=1.3MP) от рел-роста 1.01 в канале 550.*1.25*1.3,
                             // а в правильной шкале должен быть в 75 канале
-                            Double_t ScaleFactor = 75. / (550. * 1.25 * 1.3); // 19-MAR-2020 Movc\
-han                                                                             
+                            Double_t ScaleFactor = 75. / (550. * 1.25 * 1.3); // 19-MAR-2020 Movchan
+                            ScaleFactor *= 1.68; //AZ-040822
+                            ScaleFactor *= 1.32; //AZ-050822
+
                             // S.Movchan denies: if( iRow >= 26) ScaleFactor *=(1.2/1.8);
                             ampl *= ScaleFactor;
                             if (ampl > 1023.1) ampl = 1023.1;
-
-                            //new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, fDigits4dArray[iRow][iPad][iTime].signal);
-                            new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, ampl);
+                            if (ampl > fNoiseThreshold) //AZ-040822
+                                new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, ampl);
                         }
                     }
                     //if (fDigits4dArray[iRow][iPad][iTime].signal > 0.0) {

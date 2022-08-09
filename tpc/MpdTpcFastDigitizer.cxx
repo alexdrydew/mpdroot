@@ -280,7 +280,7 @@ void MpdTpcFastDigitizer::Exec(Option_t *opt) {
                             // а в правильной шкале должен быть в 75 канале
                             Double_t ScaleFactor = 75. / (550. * 1.25 * 1.3); // 19-MAR-2020 Movchan
                             ScaleFactor *= 1.68; //AZ-040822
-                            ScaleFactor *= 1.32; //AZ-050822
+                            ScaleFactor *= 0.67; //AZ-090822
 
                             // S.Movchan denies: if( iRow >= 26) ScaleFactor *=(1.2/1.8);
                             ampl *= ScaleFactor;

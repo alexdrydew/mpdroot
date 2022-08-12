@@ -244,6 +244,7 @@ void MpdTpcFastDigitizer::Exec(Option_t *opt) {
     for (Int_t ih = 0; ih < nHits; ++ih) {
         MpdTpcHit *hit = (MpdTpcHit *) fHitArray->UncheckedAt(ih);
         Int_t isec = fSecGeo->Sector(hit->GetDetectorID());
+        if (hit->GetZ() < 0) isec += fSecGeo->NofSectors(); //AZ-040822
         hitsM[isec].insert(pair<Float_t, Int_t>(hit->GetLayer(), ih));
     }
 
@@ -275,17 +276,17 @@ void MpdTpcFastDigitizer::Exec(Option_t *opt) {
                             // IR03 new scale and rounding
                             //Double_t ScaleFactor = 20./(550.*1.25); // 687.5
                             // В старой шкале пик от mip для 15mm пэда был 687 канале,
-                            // тогда среднее (As=1.3MP) от рел-роста 1.01 в канале 550.*1.2\
-5*1.3,                                                                          
+                            // тогда среднее (As=1.3MP) от рел-роста 1.01 в канале 550.*1.25*1.3,
                             // а в правильной шкале должен быть в 75 канале
-                            Double_t ScaleFactor = 75. / (550. * 1.25 * 1.3); // 19-MAR-2020 Movc\
-han                                                                             
+                            Double_t ScaleFactor = 75. / (550. * 1.25 * 1.3); // 19-MAR-2020 Movchan
+                            ScaleFactor *= 1.68; //AZ-040822
+                            ScaleFactor *= 0.67; //AZ-090822
+
                             // S.Movchan denies: if( iRow >= 26) ScaleFactor *=(1.2/1.8);
                             ampl *= ScaleFactor;
                             if (ampl > 1023.1) ampl = 1023.1;
-
-                            //new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, fDigits4dArray[iRow][iPad][iTime].signal);
-                            new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, ampl);
+                            if (ampl > fNoiseThreshold) //AZ-040822
+                                new((*fDigits)[outSize]) MpdTpcDigit(id, iPad, iRow, iTime, iSec, ampl);
                         }
                     }
                     //if (fDigits4dArray[iRow][iPad][iTime].signal > 0.0) {
@@ -1062,8 +1063,10 @@ void MpdTpcFastDigitizer::FastDigi(Int_t isec, const MpdTpcHit *curHit) {
     vector<float> input = prepareModelInput();
     vector<float> output = prepareModelOutput();
     modelWrapper->modelRun(input.data(), output.data(), input.size(), output.size());
+    Double_t eLoss = curHit->GetEnergyLoss();
+    int origin = curPoint->GetTrackID();
     saveModelRunResultToDigitsArray(
-       secGeo, curPoint, modelInputParameters.tbin, yHit0, modelInputParameters.row0,
+       secGeo, eLoss, origin, modelInputParameters.tbin, yHit0, modelInputParameters.row0,
        modelInputParameters.pad0, output);
 }
 
@@ -1083,12 +1086,12 @@ vector<float> MpdTpcFastDigitizer::prepareModelInput() const
 }
 
 
-void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo, const TpcPoint *curPoint,
+void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGeo, Double_t eLoss, int origin,
                                                           Double_t tbin, Double_t yHit0, Int_t row0, Double_t pad0,
                                                           const vector<float> &output)
 {
    Double_t sum = 0.0, scale = 3.10417e+03 / 3.0e-6 * 1.878, coef =
-           curPoint->GetEnergyLoss() * scale; // dedx-to-ADC conversion
+           eLoss * scale; // dedx-to-ADC conversion
 
    for (Int_t ii = 0; ii < 128; ++ii) sum += output[ii];
    coef /= sum;
@@ -1106,7 +1109,6 @@ void MpdTpcFastDigitizer::saveModelRunResultToDigitsArray(MpdTpcSectorGeo *secGe
                if (signal < 0.1) continue;
                //fDigits4dArray[row0][i_pad][i_time].signal += output[ii_pad * 16 + ii_time];
                fDigits4dArray[row0][i_pad][i_time].signal += signal;
-               auto origin = curPoint->GetTrackID();
                auto it = fDigits4dArray[row0][i_pad][i_time].origins.find(origin);
                if (it != fDigits4dArray[row0][i_pad][i_time].origins.end()) {
                    //it->second += output[ii_pad * 16 + ii_time];

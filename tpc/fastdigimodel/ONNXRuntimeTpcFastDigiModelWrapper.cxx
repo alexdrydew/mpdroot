@@ -38,7 +38,7 @@ T vectorProduct(const std::vector<T> &v)
    return accumulate(v.begin(), v.end(), 1, std::multiplies<T>());
 }
 
-auto doGetRequest(const TString &host, int port, const TString &path)
+http::response<http::string_body> doGetRequest(const TString &host, int port, const TString &path)
 {
    boost::asio::io_context ioc;
    tcp::resolver           resolver(ioc);
@@ -135,6 +135,7 @@ void ONNXRuntimeTpcFastDigiModelWrapper::init()
 
    Ort::Env            env = Ort::Env(ORT_LOGGING_LEVEL_WARNING, "tpc digitizer");
    Ort::SessionOptions sessionOptions;
+   sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
    sessionOptions.SetIntraOpNumThreads(numThreads);
    sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 

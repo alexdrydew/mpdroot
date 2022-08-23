@@ -14,7 +14,7 @@ public:
 };
 
 
-class ONNXTpcFastDigiModelWrapper : TpcFastDigiModelWrapper {
+class ONNXTpcFastDigiModelWrapper : public TpcFastDigiModelWrapper {
 protected:
    int numThreads;
    Ort::Session *session;
@@ -24,11 +24,10 @@ protected:
 
    std::vector<int64_t> inputDims;
    std::vector<int64_t> outputDims;
-
-   ONNXTpcFastDigiModelWrapper(int numThreads);
    void initSession(std::vector<char>& onnxModel);
 
 public:
+   ONNXTpcFastDigiModelWrapper(int numThreads);
    virtual ~ONNXTpcFastDigiModelWrapper();
 
    int getBatchSize() override { return 1; }
@@ -36,7 +35,7 @@ public:
 };
 
 
-class LocalONNXTpcFastDigiModelWrapper : ONNXTpcFastDigiModelWrapper {
+class LocalONNXTpcFastDigiModelWrapper : public ONNXTpcFastDigiModelWrapper {
 private:
    TString onnxFilePath;
 
@@ -46,7 +45,7 @@ public:
 };
 
 
-class RemoteONNXTpcFastDigiModelWrapper : ONNXTpcFastDigiModelWrapper {
+class RemoteONNXTpcFastDigiModelWrapper : public ONNXTpcFastDigiModelWrapper {
 private:
    TString mlflowHost;
    int     mlflowPort;
@@ -60,7 +59,7 @@ public:
    void init() override;
 };
 
-class XLATpcFastDigiModelWrapper : TpcFastDigiModelWrapper {
+class XLATpcFastDigiModelWrapper : public TpcFastDigiModelWrapper {
 private:
    int numThreads;
 public:

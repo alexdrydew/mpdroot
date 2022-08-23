@@ -45,6 +45,7 @@ Set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
   ${CMAKE_SOURCE_DIR}/external/onnxruntime/lib
+  ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
 )
 
 Include_Directories(${INCLUDE_DIRECTORIES})

@@ -7,6 +7,7 @@ set(INCLUDE_DIRECTORIES
   ${CMAKE_SOURCE_DIR}/mpdfield
   ${CMAKE_SOURCE_DIR}/mcstack
   ${CMAKE_SOURCE_DIR}/tpc
+  ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
   ${CMAKE_SOURCE_DIR}/tof
   ${CMAKE_SOURCE_DIR}/kalman
   ${CMAKE_SOURCE_DIR}/generators
@@ -23,6 +24,7 @@ set(LINK_DIRECTORIES
   ${ROOT_LIBRARY_DIR}
   ${FAIRROOT_LIBRARY_DIR}
   ${CMAKE_SOURCE_DIR}/external/onnxruntime/lib
+  ${CMAKE_SOURCE_DIR}/tpc/fastdigimodel
 )
  
 link_directories(${LINK_DIRECTORIES})
@@ -58,7 +60,7 @@ MpdTpcClusterFinderMlem.cxx
 MpdTpcEDepParams.cxx
 MpdTpcFastDigitizer.cxx
 MpdTpcFastDigitizer6.cxx
-fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.cxx
+fastdigimodel/TpcFastDigiModelWrapper.cxx
 )
 
 Set(HEADERS)

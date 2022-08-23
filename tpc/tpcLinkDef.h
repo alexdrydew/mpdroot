@@ -41,6 +41,9 @@
 #pragma link C++ class MpdTpcFastDigitizer+;
 #pragma link C++ class MpdTpcFastDigitizer6+;
 #pragma link C++ class TpcFastDigiModelWrapper+;
-#pragma link C++ class ONNXRuntimeTpcFastDigiModelWrapper;
+#pragma link C++ class TpcFastDigiModelWrapper;
+#pragma link C++ class ONNXTpcFastDigiModelWrapper;
+#pragma link C++ class LocalONNXTpcFastDigiModelWrapper;
+#pragma link C++ class RemoteONNXTpcFastDigiModelWrapper;
 
 #endif

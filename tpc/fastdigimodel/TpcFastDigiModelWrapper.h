@@ -62,8 +62,9 @@ public:
 class XLATpcFastDigiModelWrapper : public TpcFastDigiModelWrapper {
 private:
    int numThreads;
+   TString libFilePath;
 public:
-   XLATpcFastDigiModelWrapper(int numThreads);
+   XLATpcFastDigiModelWrapper(int numThreads, const TString &libFilePath = "$VMCWORKDIR/tpc/fastdigimodel/libmodel_1.so");
    void init() override;
    int getBatchSize() override;
    int modelRun(float *input, float *output, size_t input_size, size_t output_size) override;

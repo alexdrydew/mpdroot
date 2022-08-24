@@ -148,7 +148,12 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
 #endif
 
 #ifdef UseFastDigiXLA
-    tpcModelWrapper = new XLATpcFastDigiModelWrapper(1);
+    char *libFileName = std::getenv("XLA_FILEPATH");
+    if (libFileName != nullptr) {
+      tpcModelWrapper = new XLATpcFastDigiModelWrapper(1, libFileName);
+    } else {
+      tpcModelWrapper = new XLATpcFastDigiModelWrapper(1);
+    }
 #endif
 
 #if defined(UseFastDigiONNX) or defined(UseFastDigiXLA)

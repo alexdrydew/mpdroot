@@ -188,7 +188,10 @@ int ONNXTpcFastDigiModelWrapper::modelRun(float *input, float *output, size_t in
                 outputTensors.data(), 1);
 }
 
-XLATpcFastDigiModelWrapper::XLATpcFastDigiModelWrapper(int numThreads) : numThreads(numThreads) {}
+XLATpcFastDigiModelWrapper::XLATpcFastDigiModelWrapper(int numThreads, const TString &libFilePath)
+   : numThreads(numThreads), libFilePath(libFilePath)
+{
+}
 
 XLATpcFastDigiModelWrapper::~XLATpcFastDigiModelWrapper()
 {
@@ -197,7 +200,7 @@ XLATpcFastDigiModelWrapper::~XLATpcFastDigiModelWrapper()
 
 void XLATpcFastDigiModelWrapper::init()
 {
-   gSystem->Load("$VMCWORKDIR/tpc/fastdigimodel/libmodel_1.so");
+   gSystem->Load(libFilePath);
    ::model_init(numThreads);
 }
 

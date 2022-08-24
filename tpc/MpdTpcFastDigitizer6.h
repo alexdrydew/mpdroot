@@ -11,7 +11,7 @@ public:
 private:
    vector<float> prepareModelInput() const override;
 
-   ClassDef(MpdTpcFastDigitizer6, 0)
+   ClassDefOverride(MpdTpcFastDigitizer6, 0)
 };
 
 #endif // MPDROOT_MPDTPCFASTDIGITIZER6_H

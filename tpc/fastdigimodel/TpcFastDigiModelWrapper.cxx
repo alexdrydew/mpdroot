@@ -1,17 +1,15 @@
 // This Class' Header --------------------------
-#include "ONNXRuntimeTpcFastDigiModelWrapper.h"
+#include "TpcFastDigiModelWrapper.h"
 
 // ROOT Headers --------------------------------
-#include "TRandom.h"
 #include "TString.h"
+#include "TSystem.h"
 #include "FairLogger.h"
 
 // C/C++ Headers -------------------------------
-#include <cmath>
 #include <iostream>
 #include <numeric>
 #include <vector>
-#include <cstdlib>
 #include <exception>
 #include <iterator>
 
@@ -20,12 +18,14 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
 // ONNXRuntime Headers -------------------------
 #include <onnxruntime_cxx_api.h>
+
+// XLA model header
+#include "model.h"
 
 namespace pt    = boost::property_tree;
 namespace beast = boost::beast;
@@ -98,59 +98,62 @@ std::vector<char> downloadModel(const TString &mlflowHost, int mlflowPort, const
    return std::vector<char>(onnxModel.begin(), onnxModel.end());
 }
 
-ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &mlflowHost,
-                                                                       int mlflowPort, const TString &s3Host,
-                                                                       int s3Port, const TString &modelName,
-                                                                       int modelVersion)
-   : numThreads(numThreads), mlflowHost(mlflowHost), mlflowPort(mlflowPort), s3Host(s3Host), s3Port(s3Port),
-     modelName(modelName), modelVersion(modelVersion),
+ONNXTpcFastDigiModelWrapper::ONNXTpcFastDigiModelWrapper(int numThreads)
+   : numThreads(numThreads),
      memoryInfo(Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault))
 {
 }
 
-ONNXRuntimeTpcFastDigiModelWrapper::ONNXRuntimeTpcFastDigiModelWrapper(int numThreads, const TString &onnxFilePath)
-   : numThreads(numThreads), onnxFilePath(onnxFilePath),
-     memoryInfo(Ort::MemoryInfo::CreateCpu(OrtAllocatorType::OrtArenaAllocator, OrtMemType::OrtMemTypeDefault))
+RemoteONNXTpcFastDigiModelWrapper::RemoteONNXTpcFastDigiModelWrapper(int numThreads, const TString &mlflowHost,
+                                                                     int mlflowPort, const TString &s3Host, int s3Port,
+                                                                     const TString &modelName, int modelVersion)
+   : ONNXTpcFastDigiModelWrapper(numThreads), mlflowHost(mlflowHost), mlflowPort(mlflowPort), s3Host(s3Host),
+     s3Port(s3Port), modelName(modelName), modelVersion(modelVersion)
 {
 }
 
-ONNXRuntimeTpcFastDigiModelWrapper::~ONNXRuntimeTpcFastDigiModelWrapper()
+LocalONNXTpcFastDigiModelWrapper::LocalONNXTpcFastDigiModelWrapper(int numThreads, const TString &onnxFilePath)
+   : ONNXTpcFastDigiModelWrapper(numThreads), onnxFilePath(onnxFilePath)
 {
-   if (session != nullptr) {
-      delete session;
-   }
 }
 
-void ONNXRuntimeTpcFastDigiModelWrapper::init()
+void RemoteONNXTpcFastDigiModelWrapper::init()
 {
-   std::vector<char> onnx;
-   if (onnxFilePath.Length() > 0) {
-      LOG(INFO) << "Loading TPC fast digitizer model from local file." << std::endl;
-      std::ifstream file = std::ifstream(onnxFilePath, std::ios::binary | std::ios::in);
-      onnx               = std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-   } else {
-      LOG(INFO) << "Loading TPC fast digitizer model using model server." << std::endl;
-      onnx = downloadModel(mlflowHost, mlflowPort, s3Host, s3Port, modelName, modelVersion);
-   }
+   LOG(INFO) << "Loading TPC fast digitizer model using model server." << std::endl;
+   gSystem->Load("libboost_system");
+   std::vector<char> onnxModel = downloadModel(mlflowHost, mlflowPort, s3Host, s3Port, modelName, modelVersion);
+   initSession(onnxModel);
+}
 
+void LocalONNXTpcFastDigiModelWrapper::init()
+{
+   LOG(INFO) << "Loading TPC fast digitizer model from local file." << std::endl;
+   std::ifstream     file(onnxFilePath, std::ios::binary | std::ios::in);
+   std::vector<char> onnxModel =
+      std::vector<char>(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+   initSession(onnxModel);
+}
+
+void ONNXTpcFastDigiModelWrapper::initSession(std::vector<char> &onnxModel)
+{
    Ort::Env            env = Ort::Env(ORT_LOGGING_LEVEL_WARNING, "tpc digitizer");
    Ort::SessionOptions sessionOptions;
    sessionOptions.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
    sessionOptions.SetIntraOpNumThreads(numThreads);
    sessionOptions.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
-   session = new Ort::Session(env, static_cast<void *>(onnx.data()), onnx.size(), sessionOptions);
+   session = new Ort::Session(env, static_cast<void *>(onnxModel.data()), onnxModel.size(), sessionOptions);
 
    Ort::AllocatorWithDefaultOptions allocator;
 
-   const char *  inputName              = session->GetInputName(0, allocator);
+   const char   *inputName              = session->GetInputName(0, allocator);
    Ort::TypeInfo inputTypeInfo          = session->GetInputTypeInfo(0);
    auto          inputTensorInfo        = inputTypeInfo.GetTensorTypeAndShapeInfo();
    inputDims                            = inputTensorInfo.GetShape();
    size_t             inputTensorSize   = vectorProduct(inputDims);
    std::vector<float> inputTensorValues = std::vector<float>(inputTensorSize, 0.);
 
-   const char *  outputName              = session->GetOutputName(0, allocator);
+   const char   *outputName              = session->GetOutputName(0, allocator);
    Ort::TypeInfo outputTypeInfo          = session->GetOutputTypeInfo(0);
    auto          outputTensorInfo        = outputTypeInfo.GetTensorTypeAndShapeInfo();
    outputDims                            = outputTensorInfo.GetShape();
@@ -166,7 +169,12 @@ void ONNXRuntimeTpcFastDigiModelWrapper::init()
    LOG(INFO) << "Output: " << outputName << ", Size: " << outputTensorSize << std::endl;
 }
 
-int ONNXRuntimeTpcFastDigiModelWrapper::modelRun(float *input, float *output, size_t input_size, size_t output_size)
+ONNXTpcFastDigiModelWrapper::~ONNXTpcFastDigiModelWrapper()
+{
+   delete session;
+}
+
+int ONNXTpcFastDigiModelWrapper::modelRun(float *input, float *output, size_t input_size, size_t output_size)
 {
    std::vector<Ort::Value> inputTensors;
    std::vector<Ort::Value> outputTensors;
@@ -178,4 +186,30 @@ int ONNXRuntimeTpcFastDigiModelWrapper::modelRun(float *input, float *output, si
 
    session->Run(Ort::RunOptions{nullptr}, inputNames.data(), inputTensors.data(), 1, outputNames.data(),
                 outputTensors.data(), 1);
+}
+
+XLATpcFastDigiModelWrapper::XLATpcFastDigiModelWrapper(int numThreads, const TString &libFilePath)
+   : numThreads(numThreads), libFilePath(libFilePath)
+{
+}
+
+XLATpcFastDigiModelWrapper::~XLATpcFastDigiModelWrapper()
+{
+   ::model_free();
+}
+
+void XLATpcFastDigiModelWrapper::init()
+{
+   gSystem->Load(libFilePath);
+   ::model_init(numThreads);
+}
+
+int XLATpcFastDigiModelWrapper::getBatchSize()
+{
+   return ::get_batch_size();
+}
+
+int XLATpcFastDigiModelWrapper::modelRun(float *input, float *output, size_t input_size, size_t output_size)
+{
+   ::model_run(input, output, static_cast<int>(input_size), static_cast<int>(output_size));
 }

@@ -22,7 +22,7 @@
 #include "FairTask.h"
 #include "MpdMCTrack.h"
 #include "FairField.h"
-#include "fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.h"
+#include "fastdigimodel/TpcFastDigiModelWrapper.h"
 
 class TpcGas;
 class MpdTpcSectorGeo;
@@ -42,7 +42,7 @@ class MpdTpcFastDigitizer : public FairTask {
 public:
 
     // Constructors/Destructors ---------
-    MpdTpcFastDigitizer(ONNXRuntimeTpcFastDigiModelWrapper* onnxModelWrapper);
+    MpdTpcFastDigitizer(TpcFastDigiModelWrapper *modelWrapper);
     virtual ~MpdTpcFastDigitizer();
 
     Bool_t isSubtrackInInwards(const TpcPoint *p1, const TpcPoint *p2);
@@ -146,7 +146,7 @@ private:
     Bool_t fPrintDebugInfo;          // print or not additional information in output
     Bool_t fOneRow;                  // distribute charge only in one padrow - for debug
 
-    ONNXRuntimeTpcFastDigiModelWrapper* modelWrapper;
+    TpcFastDigiModelWrapper * modelWrapper;
 
     ClassDef(MpdTpcFastDigitizer, 0)
 };

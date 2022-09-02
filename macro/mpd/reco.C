@@ -45,7 +45,7 @@ using namespace std;
 R__ADD_INCLUDE_PATH($VMCWORKDIR)
 #include "macro/mpd/mpdloadlibs.C"
 
-#define UseFastDigi  // Choose: UseMlem HitProducer UseFastDigi
+#define UseFastDigiONNX  // Choose: UseMlem HitProducer UseFastDigiXLA UseFastDigiONNX
 
 // Macro for running reconstruction:
 // inFile - input file with MC data, default: evetest.root
@@ -122,11 +122,15 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
     tpcDigitizer->SetPersistence(kFALSE);
     fRun->AddTask(tpcDigitizer);
 #endif
-#ifdef UseFastDigi
+
+#if defined(UseFastDigiONNX) or defined(UseFastDigiXLA)
+    TpcFastDigiModelWrapper* tpcModelWrapper;
+#endif
+    
+#ifdef UseFastDigiONNX
     char* onnxFilename = std::getenv("ONNX_FILEPATH");
-   ONNXRuntimeTpcFastDigiModelWrapper* onnxWrapper;
     if (onnxFilename != nullptr) {
-       onnxWrapper = new ONNXRuntimeTpcFastDigiModelWrapper(1, onnxFilename);
+       tpcModelWrapper = new LocalONNXTpcFastDigiModelWrapper(1, onnxFilename);
     } else {
        char* mlflowHost = std::getenv("MLFLOW_HOST");
        int mlflowPort = std::atoi(std::getenv("MLFLOW_PORT"));
@@ -138,9 +142,22 @@ void reco(TString inFile = "$VMCWORKDIR/macro/mpd/evetest.root", TString outFile
        if (onnxModelVersionStr != nullptr) {
           onnxModelVersion = std::atoi(onnxModelVersionStr);
        }
-       onnxWrapper = new ONNXRuntimeTpcFastDigiModelWrapper(1, mlflowHost, mlflowPort, s3Host, s3Port, onnxModelName, onnxModelVersion);
+       tpcModelWrapper = new RemoteONNXTpcFastDigiModelWrapper(
+          1, mlflowHost, mlflowPort, s3Host, s3Port, onnxModelName, onnxModelVersion);
     }
-    MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer(onnxWrapper);
+#endif
+
+#ifdef UseFastDigiXLA
+    char *libFileName = std::getenv("XLA_FILEPATH");
+    if (libFileName != nullptr) {
+      tpcModelWrapper = new XLATpcFastDigiModelWrapper(1, libFileName);
+    } else {
+      tpcModelWrapper = new XLATpcFastDigiModelWrapper(1);
+    }
+#endif
+
+#if defined(UseFastDigiONNX) or defined(UseFastDigiXLA)
+    MpdTpcFastDigitizer* tpcDigitizer = new MpdTpcFastDigitizer(tpcModelWrapper);
     tpcDigitizer->SetPersistence(kFALSE);
     fRun->AddTask(tpcDigitizer);
 #endif

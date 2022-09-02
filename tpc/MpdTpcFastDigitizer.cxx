@@ -20,7 +20,7 @@
 #include "MpdTpcSectorGeo.h"
 #include "TpcGas.h"
 #include "TpcPoint.h"
-#include "fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.h"
+#include "fastdigimodel/TpcFastDigiModelWrapper.h"
 
 // FAIR Headers ----------------------
 #include "FairRunAna.h"
@@ -60,7 +60,7 @@ static clock_t tAll = 0;
 //FILE *lunAZ = nullptr; //fopen("gasGain.dat","w");
 //---------------------------------------------------------------------------
 
-MpdTpcFastDigitizer::MpdTpcFastDigitizer(ONNXRuntimeTpcFastDigiModelWrapper* onnxModelWrapper)
+MpdTpcFastDigitizer::MpdTpcFastDigitizer(TpcFastDigiModelWrapper *modelWrapper)
         : FairTask("TPC fast digitizer"),
           fMCPointArray(nullptr),
           fMCTracksArray(nullptr),
@@ -87,7 +87,7 @@ MpdTpcFastDigitizer::MpdTpcFastDigitizer(ONNXRuntimeTpcFastDigiModelWrapper* onn
           fPrintDebugInfo(kFALSE),
         //fOneRow(kTRUE), // debug
           fOneRow(kFALSE),
-          modelWrapper(onnxModelWrapper) {
+          modelWrapper(modelWrapper) {
     fInputBranchName = "TpcPoint";
     fOutputBranchName = "MpdTpcDigit";
 

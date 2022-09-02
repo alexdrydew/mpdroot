@@ -2,16 +2,16 @@
 #define MPDROOT_MPDTPCFASTDIGITIZER6_H
 
 #include "MpdTpcFastDigitizer.h"
-#include "fastdigimodel/ONNXRuntimeTpcFastDigiModelWrapper.h"
+#include "fastdigimodel/TpcFastDigiModelWrapper.h"
 
 class MpdTpcFastDigitizer6: public MpdTpcFastDigitizer {
 public:
-   MpdTpcFastDigitizer6(ONNXRuntimeTpcFastDigiModelWrapper* onnxModelWrapper): MpdTpcFastDigitizer(onnxModelWrapper) { };
+   MpdTpcFastDigitizer6(TpcFastDigiModelWrapper *onnxModelWrapper): MpdTpcFastDigitizer(onnxModelWrapper) { };
 
 private:
    vector<float> prepareModelInput() const override;
 
-   ClassDef(MpdTpcFastDigitizer6, 0)
+   ClassDefOverride(MpdTpcFastDigitizer6, 0)
 };
 
 #endif // MPDROOT_MPDTPCFASTDIGITIZER6_H
